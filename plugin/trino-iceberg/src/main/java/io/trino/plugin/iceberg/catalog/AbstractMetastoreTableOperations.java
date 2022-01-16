@@ -178,7 +178,10 @@ public abstract class AbstractMetastoreTableOperations
         }
 
         if (base == null) {
-            commitNewTable(metadata);
+            String isHiveEnabled = metadata.properties().getOrDefault("engine.hive.enabled", "false");
+            boolean hiveEnabled = isHiveEnabled.equalsIgnoreCase("true");
+
+            commitNewTable(metadata, hiveEnabled);
         }
         else {
             commitToExistingTable(base, metadata);
@@ -187,9 +190,9 @@ public abstract class AbstractMetastoreTableOperations
         shouldRefresh = true;
     }
 
-    protected void commitNewTable(TableMetadata metadata)
+    protected void commitNewTable(TableMetadata metadata, boolean isHive)
     {
-        String newMetadataLocation = writeNewMetadata(metadata, version + 1);
+        String newMetadataLocation = writeNewMetadata(metadata, version + 1, isHive);
 
         Table table;
         try {
@@ -269,9 +272,9 @@ public abstract class AbstractMetastoreTableOperations
         return new SchemaTableName(database, tableName);
     }
 
-    protected String writeNewMetadata(TableMetadata metadata, int newVersion)
+    protected String writeNewMetadata(TableMetadata metadata, int newVersion, boolean isHive)
     {
-        String newTableMetadataFilePath = newTableMetadataFilePath(metadata, newVersion);
+        String newTableMetadataFilePath = newTableMetadataFilePath(metadata, newVersion, isHive);
         OutputFile newMetadataLocation = fileIo.newOutputFile(newTableMetadataFilePath);
 
         // write the new metadata
@@ -307,10 +310,11 @@ public abstract class AbstractMetastoreTableOperations
         shouldRefresh = false;
     }
 
-    protected static String newTableMetadataFilePath(TableMetadata meta, int newVersion)
+    protected static String newTableMetadataFilePath(TableMetadata meta, int newVersion, boolean isHiveEnabled)
     {
         String codec = meta.property(METADATA_COMPRESSION, METADATA_COMPRESSION_DEFAULT);
-        return metadataFileLocation(meta, format("%05d-%s%s", newVersion, randomUUID(), getFileExtension(codec)));
+        String fileName = createMetadataFileName(isHiveEnabled, newVersion, codec);
+        return metadataFileLocation(meta, fileName);
     }
 
     protected static String metadataFileLocation(TableMetadata metadata, String filename)
@@ -343,5 +347,27 @@ public abstract class AbstractMetastoreTableOperations
                         toHiveType(HiveSchemaUtil.convert(column.type())),
                         Optional.empty()))
                 .collect(toImmutableList());
+    }
+
+    protected static boolean isHiveEnabled(TableMetadata base, TableMetadata metadata)
+    {
+        String isHiveEnabledBase = base.properties().getOrDefault("engine.hive.enabled", "false");
+        String isHiveEnabledMetadata = metadata.properties().getOrDefault("engine.hive.enabled", "false");
+
+        boolean metadataIsTheSame = isHiveEnabledMetadata.equalsIgnoreCase(isHiveEnabledBase);
+
+        return metadataIsTheSame && isHiveEnabledMetadata.equalsIgnoreCase("true");
+    }
+
+    private static String createMetadataFileName(boolean isHiveEnabled, int newVersion, String codec)
+    {
+        String fileName;
+        if (isHiveEnabled) {
+            fileName = format("v%d-%s", newVersion, getFileExtension(codec));
+        }
+        else {
+            fileName = format("%05d-%s%s", newVersion, randomUUID(), getFileExtension(codec));
+        }
+        return fileName;
     }
 }

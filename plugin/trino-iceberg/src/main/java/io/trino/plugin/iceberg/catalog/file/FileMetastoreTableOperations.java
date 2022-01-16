@@ -50,7 +50,8 @@ public class FileMetastoreTableOperations
     @Override
     protected void commitToExistingTable(TableMetadata base, TableMetadata metadata)
     {
-        String newMetadataLocation = writeNewMetadata(metadata, version + 1);
+        boolean hiveEnabled = isHiveEnabled(base, metadata);
+        String newMetadataLocation = writeNewMetadata(metadata, version + 1, hiveEnabled);
 
         Table table;
         try {

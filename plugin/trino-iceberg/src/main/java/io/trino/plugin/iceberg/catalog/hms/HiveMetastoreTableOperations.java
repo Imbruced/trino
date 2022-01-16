@@ -58,7 +58,9 @@ public class HiveMetastoreTableOperations
     @Override
     protected void commitToExistingTable(TableMetadata base, TableMetadata metadata)
     {
-        String newMetadataLocation = writeNewMetadata(metadata, version + 1);
+        boolean hiveEnabled = isHiveEnabled(base, metadata);
+
+        String newMetadataLocation = writeNewMetadata(metadata, version + 1, hiveEnabled);
         HiveIdentity identity = new HiveIdentity(session);
 
         long lockId = thriftMetastore.acquireTableExclusiveLock(
