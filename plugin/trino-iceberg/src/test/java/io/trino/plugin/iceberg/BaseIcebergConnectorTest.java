@@ -2961,7 +2961,7 @@ public abstract class BaseIcebergConnectorTest
     {
         assertUpdate("CREATE TABLE test_iceberg_get_table_props (x BIGINT)");
         assertThat(query("SELECT * FROM \"test_iceberg_get_table_props$properties\""))
-                .matches(format("VALUES (VARCHAR 'write.format.default', VARCHAR '%s')", format.name()));
+                .matches(format("VALUES (VARCHAR 'hive_enabled', VARCHAR 'false'), (VARCHAR 'write.format.default', VARCHAR '%s')", format.name()));
         dropTable("test_iceberg_get_table_props");
     }
 
