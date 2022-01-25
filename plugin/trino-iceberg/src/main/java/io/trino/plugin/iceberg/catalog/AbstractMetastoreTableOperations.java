@@ -199,7 +199,7 @@ public abstract class AbstractMetastoreTableOperations
     protected void commitNewTable(TableMetadata metadata)
     {
         String newMetadataLocation = writeNewMetadata(metadata, version + 1);
-        Boolean isHiveEnabled = metadata.property(HIVE_ENABLED, "false").equals("true");
+        boolean isHiveEnabled = metadata.property(HIVE_ENABLED, "false").equals("true");
 
         StorageFormat storageFormat = isHiveEnabled ? HIVE_ICEBERG_STORAGE_FORMAT : STORAGE_FORMAT;
 
